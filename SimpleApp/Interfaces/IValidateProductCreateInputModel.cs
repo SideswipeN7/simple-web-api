@@ -1,9 +1,10 @@
 ﻿using SimpleApp.DTO;
+using SimpleApp.Validators;
 
 namespace SimpleApp.Interfaces
 {
     public interface IValidateProductCreateInputModel
     {
-        bool Validate(ProductCreateInputModel model);
+        ValidationResult Validate(DtoCreateProduct model);
     }
 }

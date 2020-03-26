@@ -1,12 +1,17 @@
 using Autofac;
 using Autofac.Extensions.DependencyInjection;
+using AutoMapper;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.OpenApi.Models;
+using SimpleApp.Configurations;
 using SimpleApp.Controllers;
 using SimpleApp.Interfaces;
+using SimpleApp.Mapper;
 using SimpleApp.Models;
+using SimpleApp.Services;
 using SimpleApp.Validators;
 using System;
 
@@ -25,24 +30,37 @@ namespace SimpleApp
         // This method gets called by the runtime. Use this method to add services to the container.
         public IServiceProvider ConfigureServices(IServiceCollection services)
         {
-            services.AddMvc();
+            services.AddControllers();
+            services.AddRazorPages();
 
             //Configure Swagger
             services.AddSwaggerGen(c =>
             {
-                c.SwaggerDoc("v1", new Swashbuckle.AspNetCore.Swagger.Info() { Title = "Simple application", Version = "1.0v" });
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "Simple application", Version = "1.0v" });
             });
+
+            //Json configuration
+            var dbConf = Configuration.GetSection("Database").Get<Database>();
 
             //Configure Autofac
             var builder = new ContainerBuilder();
-            builder.Register(e => new ProductsContext("Gi7aS-3urq3_"));
-            builder.RegisterType<ProductCreateValidator>().As<IValidateProductCreateInputModel>().SingleInstance();
-            builder.RegisterType<ProductUpdateValidator>().As<IValidateProductUpdateInputModel>().SingleInstance();
-            builder.Register(c => new ProductController(c.Resolve<ProductsContext>(), c.Resolve<IValidateProductCreateInputModel>(), c.Resolve<IValidateProductUpdateInputModel>())).SingleInstance();
-            builder.Populate(services);          
-            AutofacContainer = builder.Build();   
 
-            AutofacContainer.Resolve<ProductController>();
+            builder.RegisterInstance(new MapperConfiguration(conf =>
+            {
+                conf.AddProfile(new AutoMapperProfile());
+            }).CreateMapper()).As<IMapper>();
+
+            builder.RegisterType<VersionService>().SingleInstance().As<IVersionService>();
+
+            builder.RegisterType<ProductCreateValidator>().As<IValidateProductCreateInputModel>();
+            builder.RegisterType<ProductUpdateValidator>().As<IValidateProductUpdateInputModel>();
+            builder.RegisterType<ProductsContext>().WithParameter("url", dbConf.Url).As<IProductsContext>();
+            builder.RegisterType<ProductsService>().As<IProductsService>();
+            builder.RegisterType<ProductController>();
+
+            builder.Populate(services);
+            AutofacContainer = builder.Build();
+
             return new AutofacServiceProvider(AutofacContainer);
         }
 
@@ -51,13 +69,16 @@ namespace SimpleApp
         {
             if (env.IsDevelopment())
             {
-                app.UseBrowserLink();
                 app.UseDeveloperExceptionPage();
             }
             else
             {
+                app.UseHsts();
                 app.UseExceptionHandler("/Error");
             }
+
+            app.UseStatusCodePagesWithRedirects("/Error/{0}");
+
             app.UseSwagger();
             app.UseSwaggerUI(c =>
             {
@@ -65,9 +86,13 @@ namespace SimpleApp
                 c.RoutePrefix = string.Empty;
             });
 
-            app.UseStaticFiles();
-
-            app.UseMvc();
+            app.UseRouting();
+            app.UseHttpsRedirection();
+            app.UseEndpoints(e =>
+            {
+                e.MapControllers();
+                e.MapRazorPages();
+            });
         }
     }
 }

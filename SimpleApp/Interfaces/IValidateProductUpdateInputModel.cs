@@ -1,10 +1,10 @@
 ﻿using SimpleApp.DTO;
-using System;
+using SimpleApp.Validators;
 
 namespace SimpleApp.Interfaces
 {
     public interface IValidateProductUpdateInputModel
     {
-        bool Validate(ProductUpdateInputModel model, Guid id);
+        ValidationResult Validate(DtoUpdateProduct model);
     }
 }

@@ -1,93 +1,105 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using SimpleApp.DTO;
 using SimpleApp.Interfaces;
-using SimpleApp.Models;
 
 namespace SimpleApp.Controllers
 {
-    [Produces("application/json")]
-    [Route("api/Product")]
+    [ApiController]
+    [Route("[controller]")]
     public class ProductController : Controller
     {
-        public ProductsContext DbContext { get; set; }
-        public IValidateProductCreateInputModel CreateValidator { get; set; }
-        public IValidateProductUpdateInputModel UpdateValidator { get; set; }
+        private readonly IProductsService service;
 
-
-        public ProductController(ProductsContext dbContext, IValidateProductCreateInputModel createValidator, IValidateProductUpdateInputModel updateValidator)
+        public ProductController(IProductsService service)
         {
-            DbContext = dbContext;
-            CreateValidator = createValidator;
-            UpdateValidator = updateValidator;
+            this.service = service;
         }
-
 
         // GET: api/Product
         [HttpGet]
-        public IEnumerable<Product> Get()
+        public async Task<IActionResult> GetAsync()
         {
-            return DbContext.Products;
+            try
+            {
+                var products = await service.GetAsync();
+                if (products is null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(products);
+            }
+            catch
+            {
+                return BadRequest();
+            }
         }
 
         // GET: api/Product/5
-        [HttpGet("{id}", Name = "Get")]
-        public Product Get(Guid id)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetAsync(Guid id)
         {
-            return DbContext.Products.FirstOrDefault(e => e.Id == id);
+            try
+            {
+                var product = await service.GetAsync(id);
+                if (product is null)
+                {
+                    return NotFound();
+                }
+
+                return Ok(product);
+            }
+            catch
+            {
+                return BadRequest();
+            }
         }
 
         // POST: api/Product
         [HttpPost]
-        public Guid? Post([FromBody] ProductCreateInputModel model)
+        public async Task<IActionResult> PostAsync([FromBody] DtoCreateProduct model)
         {
-            Guid? result = null;
-            if (CreateValidator.Validate(model))
+            try
             {
-                var product = model.toProduct();
-                product = DbContext.Products.Add(product).Entity;
-                DbContext.SaveChanges();
-                result = product.Id;
-            }
+                Guid productId = await service.AddAsync(model);
 
-            return result;
+                return Ok(productId);
+            }
+            catch
+            {
+                return BadRequest();
+            }
         }
 
         // PUT: api/Product/5
-        [HttpPut("{id}")]
-        public Product Put(Guid id, [FromBody] ProductUpdateInputModel model)
+        [HttpPut]
+        public async Task<IActionResult> PutAsync([FromBody] DtoUpdateProduct model)
         {
-            Product result = null;
-            if (UpdateValidator.Validate(model, id))
+            try
             {
-                var toUpdate = DbContext.Products.FirstOrDefault(e => e.Id == id);
-                if (toUpdate != null)
-                {
-                    toUpdate.Name = model.Name;
-                    toUpdate.Price = model.Price;
-                    DbContext.Products.Update(toUpdate);
-                    DbContext.SaveChanges();
-                    result = toUpdate;
-                }
-            }
+                DtoProduct product = await service.UpdateAsync(model);
 
-            return result;
+                return Ok(product);
+            }
+            catch
+            {
+                return BadRequest();
+            }
         }
 
         // DELETE: api/ApiWithActions/5
         [HttpDelete("{id}")]
-        public Product Delete(Guid id)
+        public async Task<IActionResult> DeleteAsync(Guid id)
         {
-            var toDelete = DbContext.Products.FirstOrDefault(e => e.Id == id);
-            if (toDelete != null)
+            var result = await service.DeleteAsync(id);
+            if (result is null)
             {
-                toDelete = DbContext.Products.Remove(toDelete).Entity;
-                DbContext.SaveChanges();
+                return NotFound(id);
             }
 
-            return toDelete;
+            return Ok(result);
         }
     }
 }

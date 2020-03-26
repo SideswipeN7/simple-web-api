@@ -1,24 +1,21 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using SimpleApp.Interfaces;
+using System.Threading.Tasks;
 
 namespace SimpleApp.Models
 {
-    public class ProductsContext : DbContext
+    public class ProductsContext : DbContext, IProductsContext
     {
-        private string password;
-        public ProductsContext(string password)
-        {
-            this.password = password;
-        }
-        public DbSet<Product> Products { get; set; }
+        private readonly string url;
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        {
-            optionsBuilder.UseSqlServer($@"Data Source=den1.mssql8.gear.host;Initial Catalog=simpleapp;User ID=simpleapp;Password={password};Connect Timeout=30;Encrypt=False;TrustServerCertificate=False;ApplicationIntent=ReadWrite;MultiSubnetFailover=False");
-        }
+        DbSet<Product> IProductsContext.Products { get; set; }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
-        {
-            modelBuilder.ApplyConfiguration(new Product());
-        }
+        public ProductsContext(string url) => this.url = url;
+
+        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder) => optionsBuilder.UseSqlServer(url);
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder) => modelBuilder.ApplyConfiguration(new Product());
+
+        async Task IProductsContext.SaveChangesAsync() => await base.SaveChangesAsync();
     }
 }

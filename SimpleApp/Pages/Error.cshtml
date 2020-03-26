@@ -1,0 +1,22 @@
+﻿@page "/Error/{ErrorCode}"
+@model SimpleApp.ErrorModel
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>@nameof(SimpleApp) Error</title>
+</head>
+<body>
+    @if (Model.ErrorCode == "404")
+    {
+        <h1>404 Page not found</h1>
+        <p>No such page exists at this location.</p>
+    }
+    else
+    {
+        <h1>Error! Status Code: @Model.ErrorCode</h1>
+    }
+</body>
+</html>
+
