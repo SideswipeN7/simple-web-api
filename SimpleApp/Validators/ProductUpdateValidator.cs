@@ -6,44 +6,35 @@ namespace SimpleApp.Validators
 {
     public class ProductUpdateValidator : IValidateProductUpdateInputModel
     {
-        private readonly int MINIMAL_PRODUCT_NAME_LENGTH = 1;
-        private readonly int MAXIMAL_PRODUCT_NAME_LENGTH = 100;
-        private readonly int MINIMAL_PRODUCT_PRICE = 1;
-        private readonly int MAXIMAL_PRODUCT_PRICE = 1_000_000;
+        private readonly int MinimalProductNameLength = 1;
+        private readonly int MaximalProductNameLength = 100;
+        private readonly int MinimalProductPrice = 1;
+        private readonly int MaximalProductPrice = 1_000_000;
 
-        public bool Validate(ProductUpdateInputModel model, Guid id)
+        public ValidationResult Validate(DtoUpdateProduct model)
         {
-            if (id == Guid.Empty)
+            if (model.Guid == Guid.Empty)
             {
-                Console.Error.WriteLine($"Product Guid is empty");
-                return false;
+                return new ValidationResult { ErrorMessage = "Product Guid is empty" };
             }
-            if (model.Price < MINIMAL_PRODUCT_PRICE)
+            if (model.Price < MinimalProductPrice)
             {
-                Console.Error.WriteLine($"Product Price is below minimal," +
-                    $"is: {model.Price}, minimal is: {MINIMAL_PRODUCT_PRICE}");
-                return false;
+                return new ValidationResult { ErrorMessage = $"Product Price is below minimal, is: {model.Price}, minimal is: {MinimalProductPrice}" };
             }
-            if (model.Price > MAXIMAL_PRODUCT_PRICE)
+            if (model.Price > MaximalProductPrice)
             {
-                Console.Error.WriteLine($"Product Price is above maximal," +
-                    $"is: {model.Price}, minimal is: {MAXIMAL_PRODUCT_PRICE}");
-                return false;
+                return new ValidationResult { ErrorMessage = $"Product Price is above maximal, is: {model.Price}, minimal is: {MaximalProductPrice}" };
             }
-            if (model.Name.Length < MINIMAL_PRODUCT_NAME_LENGTH)
+            if (model.Name.Length < MinimalProductNameLength)
             {
-                Console.Error.WriteLine($"Product Name is below minimal length," +
-                    $"is: {model.Name.Length}, minimal is: {MAXIMAL_PRODUCT_NAME_LENGTH}");
-                return false;
+                return new ValidationResult { ErrorMessage = $"Product Name is below minimal length, is: {model.Name.Length}, minimal is: {MaximalProductNameLength}" };
             }
-            if (model.Name.Length > MAXIMAL_PRODUCT_NAME_LENGTH)
+            if (model.Name.Length > MaximalProductNameLength)
             {
-                Console.Error.WriteLine($"Product Name is below minimal length," +
-                    $"is: {model.Name.Length}, maximal is: {MAXIMAL_PRODUCT_NAME_LENGTH}");
-                return false;
+                return new ValidationResult { ErrorMessage = $"Product Name is below minimal length, is: {model.Name.Length}, maximal is: {MaximalProductNameLength}" };
             }
 
-            return true;
+            return new ValidationResult { IsSuccessful = true };
         }
     }
 }
